@@ -182,6 +182,4 @@ For technical issues or questions:
 3. Ensure stable internet connection for data fetching
 4. Review error messages in the Streamlit interface
 
----
-
-**Built with ❤️ for Ocean Data Exploration**
+---  
