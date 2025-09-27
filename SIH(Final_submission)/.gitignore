@@ -30,8 +30,8 @@ venv/
 ENV/
 env/
 
-# Streamlit
-.streamlit/secrets.toml
+# Streamlit secrets (uncomment for local development)
+# .streamlit/secrets.toml
 
 # IDE
 .vscode/
