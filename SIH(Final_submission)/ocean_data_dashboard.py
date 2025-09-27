@@ -114,12 +114,19 @@ def initialize_pinecone():
     try:
         # Initialize Pinecone with your specific configuration
         api_key = os.getenv("PINECONE_API_KEY")
+        st.write(f"🔍 Debug - Environment API Key: {'Found' if api_key else 'Not Found'}")
+        
         if not api_key:
             try:
                 api_key = st.secrets["PINECONE_API_KEY"]
-            except:
+                st.write(f"🔍 Debug - Secrets API Key: {'Found' if api_key else 'Not Found'}")
+            except Exception as e:
+                st.write(f"🔍 Debug - Secrets Error: {e}")
                 st.error("❌ Pinecone API key not found. Please set PINECONE_API_KEY in environment variables or Streamlit secrets.")
                 return None, None
+        
+        if api_key:
+            st.write(f"🔍 Debug - Using API Key: {api_key[:10]}...{api_key[-4:]}")
         
         if not api_key or api_key.strip() == "":
             st.error("❌ Pinecone API key is empty. Please check your configuration.")
@@ -244,12 +251,19 @@ def initialize_groq():
     try:
         # Initialize Groq with your API key
         api_key = os.getenv("GROQ_API_KEY")
+        st.write(f"🔍 Debug - Groq Environment API Key: {'Found' if api_key else 'Not Found'}")
+        
         if not api_key:
             try:
                 api_key = st.secrets["GROQ_API_KEY"]
-            except:
+                st.write(f"🔍 Debug - Groq Secrets API Key: {'Found' if api_key else 'Not Found'}")
+            except Exception as e:
+                st.write(f"🔍 Debug - Groq Secrets Error: {e}")
                 st.warning("⚠️ Groq API key not found. Advanced query processing will be limited.")
                 return None
+        
+        if api_key:
+            st.write(f"🔍 Debug - Using Groq API Key: {api_key[:10]}...{api_key[-4:]}")
         
         if not api_key or api_key.strip() == "":
             st.warning("⚠️ Groq API key is empty. Advanced query processing will be limited.")
