@@ -14,6 +14,9 @@ except ImportError:
     # dotenv not available in deployment, use streamlit secrets instead
     pass
 
+# Import encrypted secrets loader
+from secure_secrets import load_secure_secrets
+
 from argopy import DataFetcher as ArgoDataFetcher
 import datetime
 from datetime import date
@@ -112,9 +115,16 @@ def initialize_pinecone():
         return None, None
     
     try:
+        # Load encrypted secrets first
+        encrypted_secrets = load_secure_secrets()
+        
         # Initialize Pinecone with your specific configuration
         api_key = os.getenv("PINECONE_API_KEY")
         st.write(f"🔍 Debug - Environment API Key: {'Found' if api_key else 'Not Found'}")
+        
+        if not api_key and encrypted_secrets:
+            api_key = encrypted_secrets.get("PINECONE_API_KEY")
+            st.write(f"🔍 Debug - Encrypted Secrets API Key: {'Found' if api_key else 'Not Found'}")
         
         if not api_key:
             try:
@@ -122,7 +132,7 @@ def initialize_pinecone():
                 st.write(f"🔍 Debug - Secrets API Key: {'Found' if api_key else 'Not Found'}")
             except Exception as e:
                 st.write(f"🔍 Debug - Secrets Error: {e}")
-                st.error("❌ Pinecone API key not found. Please set PINECONE_API_KEY in environment variables or Streamlit secrets.")
+                st.error("❌ Pinecone API key not found. Please check your configuration.")
                 return None, None
         
         if api_key:
@@ -249,9 +259,16 @@ def initialize_groq():
         return None
     
     try:
+        # Load encrypted secrets first
+        encrypted_secrets = load_secure_secrets()
+        
         # Initialize Groq with your API key
         api_key = os.getenv("GROQ_API_KEY")
         st.write(f"🔍 Debug - Groq Environment API Key: {'Found' if api_key else 'Not Found'}")
+        
+        if not api_key and encrypted_secrets:
+            api_key = encrypted_secrets.get("GROQ_API_KEY")
+            st.write(f"🔍 Debug - Groq Encrypted Secrets API Key: {'Found' if api_key else 'Not Found'}")
         
         if not api_key:
             try:

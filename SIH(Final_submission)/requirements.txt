@@ -11,3 +11,4 @@ pinecone
 sentence-transformers
 groq
 python-dotenv
+cryptography
