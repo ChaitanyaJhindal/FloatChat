@@ -41,7 +41,17 @@ class SecureSecrets:
     def __init__(self, key=None):
         """Initialize with encryption key"""
         if key:
-            self.key = key.encode()
+            # Properly format the key for Fernet
+            if len(key) < 32:
+                # Pad the key to 32 bytes
+                padded_key = key.ljust(32, '0')
+            else:
+                # Truncate to 32 bytes
+                padded_key = key[:32]
+            
+            # Encode to bytes and create proper base64 key
+            key_bytes = padded_key.encode('utf-8')
+            self.fernet_key = base64.urlsafe_b64encode(key_bytes)
         else:
             # Get encryption key from Streamlit secrets or environment
             if STREAMLIT_AVAILABLE:
@@ -52,9 +62,16 @@ class SecureSecrets:
             else:
                 encryption_key = os.getenv("ENCRYPTION_KEY", "FloatChat-Ocean-Data-Explorer-2025")
             
-            self.key = encryption_key.encode()[:32].ljust(32, b'0')
+            # Format the key properly
+            if len(encryption_key) < 32:
+                padded_key = encryption_key.ljust(32, '0')
+            else:
+                padded_key = encryption_key[:32]
+            
+            key_bytes = padded_key.encode('utf-8')
+            self.fernet_key = base64.urlsafe_b64encode(key_bytes)
         
-        self.cipher = Fernet(base64.urlsafe_b64encode(self.key))
+        self.cipher = Fernet(self.fernet_key)
     
     def decrypt_secrets(self, encrypted_dict):
         """Decrypt a dictionary of secrets"""

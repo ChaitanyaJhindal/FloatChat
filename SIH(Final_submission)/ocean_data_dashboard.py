@@ -115,25 +115,38 @@ def initialize_pinecone():
         return None, None
     
     try:
-        # Load encrypted secrets first
+        # Load encrypted secrets first (highest priority)
         encrypted_secrets = load_secure_secrets()
         
         # Initialize Pinecone with your specific configuration
-        api_key = os.getenv("PINECONE_API_KEY")
-        st.write(f"🔍 Debug - Environment API Key: {'Found' if api_key else 'Not Found'}")
+        api_key = None
         
-        if not api_key and encrypted_secrets:
+        # Priority 1: Encrypted secrets
+        if encrypted_secrets:
             api_key = encrypted_secrets.get("PINECONE_API_KEY")
             st.write(f"🔍 Debug - Encrypted Secrets API Key: {'Found' if api_key else 'Not Found'}")
         
+        # Priority 2: Environment variables  
+        if not api_key:
+            api_key = os.getenv("PINECONE_API_KEY")
+            st.write(f"🔍 Debug - Environment API Key: {'Found' if api_key else 'Not Found'}")
+        
+        # Priority 3: Streamlit secrets (lowest priority)
         if not api_key:
             try:
                 api_key = st.secrets["PINECONE_API_KEY"]
-                st.write(f"🔍 Debug - Secrets API Key: {'Found' if api_key else 'Not Found'}")
+                # Check if it's a placeholder value
+                if api_key and ("your_" in api_key.lower() or "placeholder" in api_key.lower() or api_key == "your_pinecone_api_key_here"):
+                    api_key = None
+                    st.write("🔍 Debug - Streamlit Secrets: Found but contains placeholder")
+                else:
+                    st.write(f"🔍 Debug - Streamlit Secrets API Key: {'Found' if api_key else 'Not Found'}")
             except Exception as e:
                 st.write(f"🔍 Debug - Secrets Error: {e}")
-                st.error("❌ Pinecone API key not found. Please check your configuration.")
-                return None, None
+                
+        if not api_key:
+            st.error("❌ Pinecone API key not found. Please check your configuration.")
+            return None, None
         
         if api_key:
             st.write(f"🔍 Debug - Using API Key: {api_key[:10]}...{api_key[-4:]}")
@@ -262,18 +275,28 @@ def initialize_groq():
         # Load encrypted secrets first
         encrypted_secrets = load_secure_secrets()
         
-        # Initialize Groq with your API key
-        api_key = os.getenv("GROQ_API_KEY")
-        st.write(f"🔍 Debug - Groq Environment API Key: {'Found' if api_key else 'Not Found'}")
+        api_key = None
         
-        if not api_key and encrypted_secrets:
+        # Priority 1: Encrypted secrets
+        if encrypted_secrets:
             api_key = encrypted_secrets.get("GROQ_API_KEY")
             st.write(f"🔍 Debug - Groq Encrypted Secrets API Key: {'Found' if api_key else 'Not Found'}")
         
+        # Priority 2: Environment variables  
+        if not api_key:
+            api_key = os.getenv("GROQ_API_KEY")
+            st.write(f"🔍 Debug - Groq Environment API Key: {'Found' if api_key else 'Not Found'}")
+        
+        # Priority 3: Streamlit secrets (lowest priority)
         if not api_key:
             try:
                 api_key = st.secrets["GROQ_API_KEY"]
-                st.write(f"🔍 Debug - Groq Secrets API Key: {'Found' if api_key else 'Not Found'}")
+                # Check if it's a placeholder value
+                if api_key and ("your_" in api_key.lower() or "placeholder" in api_key.lower() or api_key == "your_groq_api_key_here"):
+                    api_key = None
+                    st.write("🔍 Debug - Groq Streamlit Secrets: Found but contains placeholder")
+                else:
+                    st.write(f"🔍 Debug - Groq Secrets API Key: {'Found' if api_key else 'Not Found'}")
             except Exception as e:
                 st.write(f"🔍 Debug - Groq Secrets Error: {e}")
                 st.warning("⚠️ Groq API key not found. Advanced query processing will be limited.")
