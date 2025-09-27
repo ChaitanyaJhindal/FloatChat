@@ -1,13 +1,18 @@
 import os
-from dotenv import load_dotenv
-load_dotenv()
-
 import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import warnings
 warnings.filterwarnings('ignore')
+
+# Load environment variables (for local development)
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    # dotenv not available in deployment, use streamlit secrets instead
+    pass
 
 from argopy import DataFetcher as ArgoDataFetcher
 import datetime
