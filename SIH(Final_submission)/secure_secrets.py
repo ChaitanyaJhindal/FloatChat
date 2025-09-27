@@ -7,7 +7,35 @@ This encrypts your API keys and stores them safely in the code
 import os
 import base64
 from cryptography.fernet import Fernet
-import streamlit as st
+
+# Try to import streamlit, but don't fail if it's not available
+try:
+    import streamlit as st
+    STREAMLIT_AVAILABLE = True
+except ImportError:
+    STREAMLIT_AVAILABLE = False
+    
+    # Mock streamlit functions for non-streamlit usage
+    class MockSt:
+        @staticmethod
+        def write(text):
+            print(text)
+        @staticmethod
+        def error(text):
+            print(f"ERROR: {text}")
+        @staticmethod
+        def warning(text):
+            print(f"WARNING: {text}")
+        @staticmethod
+        def get(key, default=None):
+            return os.getenv(key, default)
+        
+        class secrets:
+            @staticmethod
+            def get(key, default=None):
+                return os.getenv(key, default)
+    
+    st = MockSt()
 
 class SecureSecrets:
     def __init__(self, key=None):
@@ -16,7 +44,14 @@ class SecureSecrets:
             self.key = key.encode()
         else:
             # Get encryption key from Streamlit secrets or environment
-            encryption_key = st.secrets.get("ENCRYPTION_KEY") or os.getenv("ENCRYPTION_KEY", "FloatChat-Ocean-Data-Explorer-2025")
+            if STREAMLIT_AVAILABLE:
+                try:
+                    encryption_key = st.secrets.get("ENCRYPTION_KEY") or os.getenv("ENCRYPTION_KEY", "FloatChat-Ocean-Data-Explorer-2025")
+                except:
+                    encryption_key = os.getenv("ENCRYPTION_KEY", "FloatChat-Ocean-Data-Explorer-2025")
+            else:
+                encryption_key = os.getenv("ENCRYPTION_KEY", "FloatChat-Ocean-Data-Explorer-2025")
+            
             self.key = encryption_key.encode()[:32].ljust(32, b'0')
         
         self.cipher = Fernet(base64.urlsafe_b64encode(self.key))
@@ -29,7 +64,10 @@ class SecureSecrets:
                 decrypted[key] = self.cipher.decrypt(value.encode()).decode()
             return decrypted
         except Exception as e:
-            st.error(f"🔐 Failed to decrypt secrets: {e}")
+            if STREAMLIT_AVAILABLE:
+                st.error(f"🔐 Failed to decrypt secrets: {e}")
+            else:
+                print(f"ERROR: Failed to decrypt secrets: {e}")
             return {}
 
 # Encrypted secrets (safe to commit to GitHub)
@@ -42,8 +80,45 @@ ENCRYPTED_SECRETS = {
 def load_secure_secrets():
     """Load and decrypt secrets securely"""
     try:
-        secrets_manager = SecureSecrets()
-        return secrets_manager.decrypt_secrets(ENCRYPTED_SECRETS)
+        # For local testing, try multiple encryption keys
+        possible_keys = [
+            "FloatChat-Ocean-Data-Explorer-2025",  # Default key (try first)
+            os.getenv("ENCRYPTION_KEY"),
+        ]
+        
+        if STREAMLIT_AVAILABLE:
+            try:
+                possible_keys.insert(0, st.secrets.get("ENCRYPTION_KEY"))
+            except:
+                pass
+        
+        for key in possible_keys:
+            if key:
+                try:
+                    secrets_manager = SecureSecrets(key)
+                    decrypted = secrets_manager.decrypt_secrets(ENCRYPTED_SECRETS)
+                    if STREAMLIT_AVAILABLE:
+                        st.write(f"🔐 Successfully decrypted secrets using key: {key[:10]}...")
+                    else:
+                        print(f"🔐 Successfully decrypted secrets using key: {key[:10]}...")
+                    return decrypted
+                except Exception as e:
+                    if STREAMLIT_AVAILABLE:
+                        st.write(f"🔐 Failed to decrypt with key {key[:10] if key else 'None'}...: {e}")
+                    else:
+                        print(f"🔐 Failed to decrypt with key {key[:10] if key else 'None'}...: {e}")
+                    continue
+        
+        error_msg = "🔑 Could not decrypt secrets with any available encryption key"
+        if STREAMLIT_AVAILABLE:
+            st.error(error_msg)
+        else:
+            print(f"ERROR: {error_msg}")
+        return {}
     except Exception as e:
-        st.warning(f"⚠️ Could not load encrypted secrets: {e}")
+        warning_msg = f"⚠️ Could not load encrypted secrets: {e}"
+        if STREAMLIT_AVAILABLE:
+            st.warning(warning_msg)
+        else:
+            print(f"WARNING: {warning_msg}")
         return {}
