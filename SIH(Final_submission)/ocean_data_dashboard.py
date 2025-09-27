@@ -113,6 +113,16 @@ def initialize_pinecone():
     try:
         # Initialize Pinecone with your specific configuration
         api_key = os.getenv("PINECONE_API_KEY")
+        if not api_key:
+            try:
+                api_key = st.secrets["PINECONE_API_KEY"]
+            except:
+                st.error("❌ Pinecone API key not found. Please set PINECONE_API_KEY in environment variables or Streamlit secrets.")
+                return None, None
+        
+        if not api_key or api_key.strip() == "":
+            st.error("❌ Pinecone API key is empty. Please check your configuration.")
+            return None, None
         
         # Initialize Pinecone client for serverless
         try:
@@ -133,6 +143,19 @@ def initialize_pinecone():
         
         # Connect to your specific index
         index_name = "floatchat"
+        
+        # Check if index exists and connect
+        try:
+            index = pc.Index(index_name)
+            # Test the connection
+            index.describe_index_stats()
+        except Exception as e:
+            if "not found" in str(e).lower() or "does not exist" in str(e).lower():
+                st.error(f"❌ Pinecone index '{index_name}' not found. Please run populate_pinecone.py first to create and populate the index.")
+                return None, None
+            else:
+                st.error(f"❌ Error connecting to Pinecone: {e}")
+                return None, None
         
         try:
             # Try to get existing index
@@ -239,10 +262,16 @@ def initialize_groq():
     
     try:
         # Initialize Groq with your API key
-        api_key = os.getenv("GROQ_API_KEY") or st.secrets.get("GROQ_API_KEY", "")
-        
+        api_key = os.getenv("GROQ_API_KEY")
         if not api_key:
-            st.warning("⚠️ Groq API key not configured. Advanced query processing will be limited.")
+            try:
+                api_key = st.secrets["GROQ_API_KEY"]
+            except:
+                st.warning("⚠️ Groq API key not found. Advanced query processing will be limited.")
+                return None
+        
+        if not api_key or api_key.strip() == "":
+            st.warning("⚠️ Groq API key is empty. Advanced query processing will be limited.")
             return None
         
         client = Groq(api_key=api_key)
