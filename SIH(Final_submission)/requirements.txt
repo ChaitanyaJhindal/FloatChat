@@ -7,7 +7,7 @@ seaborn
 folium
 streamlit-folium
 argopy
-pinecone-client
+pinecone
 sentence-transformers
 groq
 python-dotenv

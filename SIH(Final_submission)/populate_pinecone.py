@@ -3,7 +3,7 @@ Populate Pinecone Vector Database with ArgoPy Documentation
 Run this script once to populate your floatchat index with ArgoPy documentation
 """
 
-import pinecone
+from pinecone import Pinecone, ServerlessSpec
 from sentence_transformers import SentenceTransformer
 import uuid
 import os

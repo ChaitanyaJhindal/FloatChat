@@ -39,10 +39,11 @@ import streamlit_folium as st_folium
 
 # Pinecone vector database for documentation queries
 try:
-    import pinecone
+    from pinecone import Pinecone, ServerlessSpec
     from sentence_transformers import SentenceTransformer
     PINECONE_AVAILABLE = True
-except ImportError:
+except ImportError as e:
+    st.warning(f"⚠️ Pinecone or SentenceTransformers not available: {e}")
     PINECONE_AVAILABLE = False
 
 # Groq AI for intelligent query processing
@@ -124,15 +125,12 @@ def initialize_pinecone():
             st.error("❌ Pinecone API key is empty. Please check your configuration.")
             return None, None
         
-        # Initialize Pinecone client for serverless
+        # Initialize Pinecone client
         try:
-            from pinecone import Pinecone, ServerlessSpec
             pc = Pinecone(api_key=api_key)
-        except:
-            # Fallback for older pinecone versions
-            import pinecone
-            pinecone.init(api_key=api_key)
-            pc = pinecone
+        except Exception as e:
+            st.error(f"❌ Failed to initialize Pinecone: {e}")
+            return None, None
         
         # Load sentence transformer for embeddings (using 512-dimensional model to match your index)
         model = SentenceTransformer('sentence-transformers/all-mpnet-base-v2')  # 768 dimensions
@@ -155,23 +153,6 @@ def initialize_pinecone():
                 return None, None
             else:
                 st.error(f"❌ Error connecting to Pinecone: {e}")
-                return None, None
-        
-        try:
-            # Try to get existing index
-            if hasattr(pc, 'Index'):
-                index = pc.Index(index_name)
-            else:
-                index = pinecone.Index(index_name)
-        except:
-            # Index exists, just connect to it
-            try:
-                if hasattr(pc, 'Index'):
-                    index = pc.Index(index_name)
-                else:
-                    index = pinecone.Index(index_name)
-            except:
-                st.warning(f"⚠️ Could not connect to Pinecone index '{index_name}'")
                 return None, None
         
         return index, model

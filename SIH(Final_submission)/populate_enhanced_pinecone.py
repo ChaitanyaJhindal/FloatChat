@@ -3,7 +3,7 @@ Enhanced Pinecone Population Script
 Adds ArgoPy documentation + Query Understanding content for Groq integration
 """
 
-import pinecone
+from pinecone import Pinecone, ServerlessSpec
 from sentence_transformers import SentenceTransformer
 import uuid
 import os
